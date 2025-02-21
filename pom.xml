@@ -63,6 +63,20 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>javacv-platform</artifactId>
+			<version>1.5.9</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.nextbreakpoint/com.nextbreakpoint.ffmpeg4java -->
+		<dependency>
+			<groupId>com.nextbreakpoint</groupId>
+			<artifactId>com.nextbreakpoint.ffmpeg4java</artifactId>
+			<version>3.1.1-1.1</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
