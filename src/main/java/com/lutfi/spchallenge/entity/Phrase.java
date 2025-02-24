@@ -15,7 +15,7 @@ public class Phrase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private Long userId;
+    private User user;
 
     @Column(name = "content")
     private String content;
