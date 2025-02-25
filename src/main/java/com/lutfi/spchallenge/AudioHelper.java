@@ -5,7 +5,7 @@ import org.bytedeco.javacv.Frame;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FileHelper {
+public class AudioHelper {
     public void convertMP4ToWAV(String inputPath, String outputPath) throws FrameGrabber.Exception, FrameRecorder.Exception {
         try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputPath)) {
             grabber.start();

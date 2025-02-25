@@ -20,7 +20,7 @@ public interface PhraseRepository extends JpaRepository<Phrase, Long> {
 
     // Find single phrase by user ID and phrase ID
     @Query("SELECT p FROM Phrase p WHERE p.user.id = :userId " +
-            "AND p.id = :phraseId AND p.deletedAt IS NULL")
+            "AND p.id = :phraseId")
     Optional<Phrase> findByUserIdAndPhraseId(
             @Param("userId") Long userId,
             @Param("phraseId") Long phraseId

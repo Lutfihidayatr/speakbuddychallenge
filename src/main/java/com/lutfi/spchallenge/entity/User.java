@@ -1,9 +1,11 @@
 package com.lutfi.spchallenge.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -24,10 +26,24 @@ public class User {
     private String lastName;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("user")
     private List<Phrase> phrases;
 
-    private String createdAt;
-    private String updatedAt;
+    private ZonedDateTime createdAt;
+    private ZonedDateTime updatedAt;
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    public User() {}
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", firstname='" + firstName + '\'' +
+                ", lastname='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", active=" + isActive +
+                '}';
+    }
 }

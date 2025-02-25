@@ -1,5 +1,6 @@
 package com.lutfi.spchallenge.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,32 +16,49 @@ public class Phrase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties("phrases")
     private User user;
 
     @Column(name = "content")
     private String content;
 
-    @Column(name = "filaname")
+    @Column(name = "filename")
     private String fileName;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private String createdAt;
+    private ZonedDateTime createdAt;
 
     @Column(name = "updated_at")
-    private String updatedAt;
+    private ZonedDateTime updatedAt;
 
     @Column(name = "deleted_at")
-    private String deletedAt;
+    private ZonedDateTime deletedAt;
 
+    public Phrase(String filename, String content) {
+        this.fileName = filename;
+        this.content = content;
+    }
+
+    public Phrase() {}
 
     @PrePersist
     protected void onCreate() {
-        createdAt = String.valueOf(ZonedDateTime.now());
-        updatedAt = String.valueOf(ZonedDateTime.now());
+        createdAt = ZonedDateTime.now();
+        updatedAt = ZonedDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = String.valueOf(ZonedDateTime.now());
+        updatedAt = ZonedDateTime.now();
+    }
+
+    @Override
+    public String toString() {
+        return "Phrase{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", filename='" + fileName + '\'' +
+                ", createdDate=" + createdAt +
+                '}';
     }
 }
