@@ -1,6 +1,7 @@
 package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.exception.UserNotFoundException;
 import com.lutfi.spchallenge.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class UserController {
     public ResponseEntity<User> findUser(@PathVariable Long id) {
         Optional<User> userOpt = userService.getUser(id);
         return userOpt.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     // TODO: don't do this in production, always require offset and limit

@@ -2,6 +2,7 @@ package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.Phrase;
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.exception.PhraseNotFoundException;
 import com.lutfi.spchallenge.service.PhraseService;
 import com.lutfi.spchallenge.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,8 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -162,12 +165,14 @@ public class AudioControllerTest {
         doNothing().when(validator).validateUserAndPhraseIds(anyLong(), anyLong());
 
         // When
-        ResponseEntity<Phrase> response = audioController.getPhraseByUserIdAndPhraseId(999L, 999L);
+        // Act & Assert
+        PhraseNotFoundException exception = assertThrows(
+                PhraseNotFoundException.class,
+                () -> audioController.getPhraseByUserIdAndPhraseId(999L, 999L)
+        );
 
         // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNull();
-
-        verify(phraseService).getPhraseByUserIdAndPhraseId(999L, 999L);
+        assertEquals("Phrase not found with id 999 for user 999", exception.getMessage());
+        verify(phraseService, times(1)).getPhraseByUserIdAndPhraseId(999L, 999L);
     }
 }

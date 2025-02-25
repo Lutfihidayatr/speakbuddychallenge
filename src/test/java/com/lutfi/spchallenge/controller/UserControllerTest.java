@@ -1,6 +1,7 @@
 package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.exception.UserNotFoundException;
 import com.lutfi.spchallenge.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,9 +18,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserControllerTest {
@@ -75,19 +77,35 @@ public class UserControllerTest {
         verify(userService).getUser(1L);
     }
 
+//    @Test
+//    public void whenFindUser_withNonExistingId_thenReturnNotFound() {
+//        // Given
+//        when(userService.getUser(anyLong())).thenReturn(Optional.empty());
+//
+//        // When
+//        ResponseEntity<User> response = userController.findUser(999L);
+//
+//        // Then
+//        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+//        assertThat(response.getBody()).isNull();
+//
+//        verify(userService).getUser(999L);
+//    }
+
     @Test
-    public void whenFindUser_withNonExistingId_thenReturnNotFound() {
-        // Given
-        when(userService.getUser(anyLong())).thenReturn(Optional.empty());
+    public void findUser_WhenUserDoesNotExist_ThrowsUserNotFoundException() {
+        // Arrange
+        Long userId = 1L;
+        when(userService.getUser(userId)).thenReturn(Optional.empty());
 
-        // When
-        ResponseEntity<User> response = userController.findUser(999L);
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userController.findUser(userId)
+        );
 
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNull();
-
-        verify(userService).getUser(999L);
+        assertEquals("User not found with id: " + userId, exception.getMessage());
+        verify(userService, times(1)).getUser(userId);
     }
 
     @Test

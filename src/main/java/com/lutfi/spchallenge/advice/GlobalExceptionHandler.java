@@ -1,6 +1,7 @@
 package com.lutfi.spchallenge.advice;
 
 import com.lutfi.spchallenge.exception.PhraseNotFoundException;
+import com.lutfi.spchallenge.exception.UserNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
@@ -14,25 +15,36 @@ import java.time.ZonedDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String paramName = ex.getName();
-        String errorMessage = String.format(
-                "Invalid value for parameter '%s'. Must be a valid number.",
-                paramName
-        );
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                errorMessage,
-                ZonedDateTime.now()
-        );
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
-    }
+//    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+//    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+//        String paramName = ex.getName();
+//        String errorMessage = String.format(
+//                "Invalid value for parameter '%s'. Must be a valid number.",
+//                paramName
+//        );
+//
+//        ErrorResponse error = new ErrorResponse(
+//                HttpStatus.BAD_REQUEST.value(),
+//                errorMessage,
+//                ZonedDateTime.now()
+//        );
+//
+//        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+//    }
 
     @ExceptionHandler(PhraseNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePhraseNotFound(PhraseNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                ZonedDateTime.now()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),

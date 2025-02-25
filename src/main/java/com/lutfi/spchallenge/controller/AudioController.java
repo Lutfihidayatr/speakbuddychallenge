@@ -2,6 +2,7 @@ package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.Phrase;
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.exception.PhraseNotFoundException;
 import com.lutfi.spchallenge.service.PhraseService;
 import com.lutfi.spchallenge.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,6 @@ public class AudioController {
         validator.validateUserAndPhraseIds(userId, phraseId);
         Optional<Phrase> phraseOpt = phraseService.getPhraseByUserIdAndPhraseId(userId, phraseId);
         return phraseOpt.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new PhraseNotFoundException(userId, phraseId));
     }
 }
