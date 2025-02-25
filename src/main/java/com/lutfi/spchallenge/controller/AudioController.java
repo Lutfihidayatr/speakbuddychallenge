@@ -44,7 +44,7 @@ public class AudioController {
         try {
             phrase = phraseService.save(user.get(), file);
         } catch (RuntimeException e) {
-            ResponseEntity.internalServerError();
+            return ResponseEntity.internalServerError().build();
         }
 
         return ResponseEntity.ok(phrase);
