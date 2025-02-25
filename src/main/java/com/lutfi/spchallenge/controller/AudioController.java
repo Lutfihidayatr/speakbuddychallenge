@@ -1,6 +1,5 @@
 package com.lutfi.spchallenge.controller;
 
-import com.lutfi.spchallenge.AudioHelper;
 import com.lutfi.spchallenge.entity.Phrase;
 import com.lutfi.spchallenge.entity.User;
 import com.lutfi.spchallenge.service.PhraseService;
@@ -15,14 +14,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/audio/user")
 public class AudioController {
-    private final AudioHelper audioHelper;
     private final PhraseService phraseService;
     private final RequestValidator validator;
     private final UserService userService;
 
     @Autowired
-    public AudioController(AudioHelper audioHelper, PhraseService phraseService, RequestValidator validator, UserService userService) {
-        this.audioHelper = audioHelper;
+    public AudioController(PhraseService phraseService, RequestValidator validator, UserService userService) {
         this.phraseService = phraseService;
         this.validator = validator;
         this.userService = userService;
@@ -43,7 +40,13 @@ public class AudioController {
             return ResponseEntity.notFound().build();
         }
 
-        Phrase phrase = phraseService.save(user.get(), file);
+        Phrase phrase = new Phrase();
+        try {
+            phrase = phraseService.save(user.get(), file);
+        } catch (RuntimeException e) {
+            ResponseEntity.internalServerError();
+        }
+
         return ResponseEntity.ok(phrase);
     }
 

@@ -37,20 +37,18 @@ public class PhraseService {
     public Phrase save(User user, MultipartFile file) {
         try {
             // save to temporary file
-            String filename = file.getOriginalFilename();
-            file.transferTo(Path.of(tempFilePath + "/" + filename));
+            String temporaryFileLoc = tempFilePath + "/" + file.getOriginalFilename();
+            file.transferTo(Path.of(temporaryFileLoc));
 
             // convert to other format
-            String fileLocation = filePath + "/" + filename + ".wav";
-            audioHelper.convertMP4ToWAV(tempFilePath + "/" + filename, fileLocation);
+            String fileLocation = filePath + "/" + file.getName() + ".wav";
+            audioHelper.convertMP4ToWAV(temporaryFileLoc, fileLocation);
 
-            Phrase phrase = new Phrase(filename, fileLocation);
+            Phrase phrase = new Phrase(file.getName(), fileLocation);
             phrase.setUser(user);
             return phraseRepository.save(phrase);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new InternalError(e);
         }
     }
 
