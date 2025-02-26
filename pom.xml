@@ -75,6 +75,12 @@
 			<artifactId>javacv-platform</artifactId>
 			<version>1.5.9</version>
 		</dependency>
+		<!-- Explicitly include FFmpeg -->
+		<dependency>
+			<groupId>org.bytedeco</groupId>
+			<artifactId>ffmpeg-platform</artifactId>
+			<version>5.1.2-1.5.8</version>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.nextbreakpoint/com.nextbreakpoint.ffmpeg4java -->
 		<dependency>

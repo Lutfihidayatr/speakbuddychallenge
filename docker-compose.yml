@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads:rw
+      - ./uploads:/app/uploads/temp:rw
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/spdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - FILE_TEMPORARY_UPLOAD=/app/uploads/temp
+      - FILE_UPLOAD=/app/uploads
+    networks:
+      - spring-postgres
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=spdb
+    networks:
+      - spring-postgres
+
+networks:
+  spring-postgres:
+
+volumes:
+  postgres-data:

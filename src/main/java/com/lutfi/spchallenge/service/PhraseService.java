@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -36,7 +37,17 @@ public class PhraseService {
 
     public Phrase save(User user, MultipartFile file) {
         try {
-            // save to temporary file
+            // TODO: refactor dir creation to using docker
+            File tempDirectory = new File(tempFilePath);
+            if (!tempDirectory.exists()) {
+                tempDirectory.mkdirs();
+            }
+
+            File directory = new File(filePath);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
             String temporaryFileLoc = tempFilePath + "/" + file.getOriginalFilename();
             file.transferTo(Path.of(temporaryFileLoc));
 
