@@ -16,7 +16,7 @@ public class Phrase {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties("phrases")
+    @JsonIgnoreProperties({"phrases", "hibernateLazyInitializer", "handler"})
     private User user;
 
     @Column(name = "content")
