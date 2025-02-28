@@ -54,13 +54,10 @@ Initial schema and sample data are provided through `init.sql` which runs when t
 - **User Management**: 
   - `GET /api/users`: List all users
   - `GET /api/users/{id}`: Get user by ID
-  - `POST /api/users`: Create new user
-  - `PUT /api/users/{id}`: Update user
-  - `DELETE /api/users/{id}`: Delete user
 
 - **Audio Processing**:
   - `POST /audio/user/{id}/phrase`: Upload audio file for a user
-  - Additional endpoints for audio retrieval and management
+  - `GET  /audio/user/{user_id}/phrase/{phrase_id}` : Additional endpoints for audio retrieval
 
 ## Development Notes
 
