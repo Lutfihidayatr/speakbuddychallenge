@@ -90,6 +90,7 @@ docker-compose logs -f app
 2. **Service Optimization**:
    - Add caching for frequently accessed data
    - Implement asynchronous processing for audio conversion tasks
+   - Add file storage like S3 to save audio files
 
 3. **Testing Improvements**:
    - Add comprehensive unit and integration tests
