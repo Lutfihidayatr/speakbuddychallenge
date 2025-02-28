@@ -59,7 +59,15 @@ public class PhraseService {
 
             Phrase phrase = new Phrase(file.getName(), fileLocation);
             phrase.setUser(user);
-            return phraseRepository.save(phrase);
+            Phrase savedPhrase = phraseRepository.save(phrase);
+
+            // Delete the temporary file after processing
+            File tempFile = new File(temporaryFileLoc);
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+
+            return savedPhrase;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
