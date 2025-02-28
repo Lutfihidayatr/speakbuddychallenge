@@ -1,6 +1,5 @@
 package com.lutfi.spchallenge.controller;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -31,10 +31,12 @@ public class PhraseService {
         this.audioHelper = audioHelper;
     }
 
-    public Phrase save(Phrase phrase) {
-        return phraseRepository.save(phrase);
-    }
 
+    /**
+     * @param user user
+     * @param file multipart file
+     * @return phrase with converted file from mp4 to wav
+     */
     public Phrase save(User user, MultipartFile file) {
         try {
             // TODO: refactor dir creation to using docker
