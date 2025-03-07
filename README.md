@@ -56,7 +56,7 @@ Initial schema and sample data are provided through `init.sql` which runs when t
   - `GET /api/users/{id}`: Get user by ID
 
 - **Audio Processing**:
-  - `POST /audio/user/{id}/phrase`: Upload audio file for a user
+  - `POST /audio/user/{id}/phrase/{id}`: Upload audio file for a user, currently we have 3 sample of phrase id
   - `GET  /audio/user/{user_id}/phrase/{phrase_id}` : Additional endpoints for audio retrieval
 
 ## Development Notes
