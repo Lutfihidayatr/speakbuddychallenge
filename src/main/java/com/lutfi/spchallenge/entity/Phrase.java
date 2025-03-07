@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Data
 @Table(name = "phrases")
@@ -14,16 +15,15 @@ public class Phrase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"phrases", "hibernateLazyInitializer", "handler"})
-    private User user;
+    @OneToMany(mappedBy = "phrase", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("phrase")
+    private List<UserPhrase> userPhrases;
 
-    @Column(name = "content")
-    private String content;
+    @Column(name = "type", nullable = false)
+    private String type;
 
-    @Column(name = "filename")
-    private String fileName;
+    @Column(name = "example", nullable = false)
+    private String example;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private ZonedDateTime createdAt;
@@ -33,32 +33,4 @@ public class Phrase {
 
     @Column(name = "deleted_at")
     private ZonedDateTime deletedAt;
-
-    public Phrase(String filename, String content) {
-        this.fileName = filename;
-        this.content = content;
-    }
-
-    public Phrase() {}
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = ZonedDateTime.now();
-        updatedAt = ZonedDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = ZonedDateTime.now();
-    }
-
-    @Override
-    public String toString() {
-        return "Phrase{" +
-                "id=" + id +
-                ", content='" + content + '\'' +
-                ", filename='" + fileName + '\'' +
-                ", createdDate=" + createdAt +
-                '}';
-    }
 }

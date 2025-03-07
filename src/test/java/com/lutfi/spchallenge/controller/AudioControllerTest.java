@@ -2,8 +2,10 @@ package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.Phrase;
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.entity.UserPhrase;
 import com.lutfi.spchallenge.exception.PhraseNotFoundException;
 import com.lutfi.spchallenge.service.PhraseService;
+import com.lutfi.spchallenge.service.UserPhraseService;
 import com.lutfi.spchallenge.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,163 +18,221 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 @ExtendWith(MockitoExtension.class)
 public class AudioControllerTest {
+
+    @Mock
+    private UserPhraseService userPhraseService;
+
     @Mock
     private PhraseService phraseService;
 
     @Mock
-    private UserService userService;
+    private RequestValidator validator;
 
     @Mock
-    private RequestValidator validator;
+    private UserService userService;
 
     @InjectMocks
     private AudioController audioController;
 
     private User testUser;
     private Phrase testPhrase;
+    private UserPhrase testUserPhrase;
     private MultipartFile testFile;
-    private ZonedDateTime now;
+    private Long userId = 1L;
+    private Long phraseId = 2L;
 
     @BeforeEach
-    public void setup() {
-        now = ZonedDateTime.now();
-
-        // Setup test user
+    void setUp() {
         testUser = new User();
-        testUser.setId(1L);
-        testUser.setEmail("lutfi@lutfi.com");
-        testUser.setFirstName("Test");
-        testUser.setLastName("User");
-        testUser.setCreatedAt(now);
-        testUser.setUpdatedAt(now);
-        testUser.setIsActive(true);
+        testUser.setId(userId);
 
-        // Setup test phrase
         testPhrase = new Phrase();
-        testPhrase.setId(1L);
-        testPhrase.setUser(testUser);
-        testPhrase.setFileName("test-audio.mp4");
-        testPhrase.setContent("/path/to/test-audio.wav");
-        testPhrase.setCreatedAt(now);
-        testPhrase.setUpdatedAt(now);
+        testPhrase.setId(phraseId);
 
-        // Setup test file
+        testUserPhrase = new UserPhrase();
+        testUserPhrase.setUser(testUser);
+        testUserPhrase.setPhrase(testPhrase);
+
         testFile = new MockMultipartFile(
                 "file",
-                "test-audio.mp4",
-                "audio/mp4",
+                "audio.mp4",
+                "video/mp4",
                 "test audio content".getBytes()
         );
     }
 
     @Test
-    public void whenUploadAndConvert_withValidUserAndFile_thenReturnPhrase() {
-        // Given
-        when(userService.getUser(anyLong())).thenReturn(Optional.of(testUser));
-        when(phraseService.save(any(User.class), any(MultipartFile.class))).thenReturn(testPhrase);
-        doNothing().when(validator).validateId(anyLong());
-        doNothing().when(validator).validateFile(any(MultipartFile.class));
+    void uploadAndConvert_Success() {
+        // Arrange
+        when(userService.getUser(userId)).thenReturn(Optional.of(testUser));
+        when(phraseService.getPhrase(phraseId)).thenReturn(Optional.of(testPhrase));
+        when(userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId)).thenReturn(Optional.empty());
+        when(userPhraseService.save(eq(testUser), eq(testPhrase), any(MultipartFile.class))).thenReturn(testUserPhrase);
 
-        // When
-        ResponseEntity<Phrase> response = audioController.uploadAndConvert(1L, testFile);
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.uploadAndConvert(userId, phraseId, testFile);
 
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(1L);
-        assertThat(response.getBody().getUser()).isEqualTo(testUser);
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testUserPhrase, response.getBody());
 
-        verify(userService).getUser(1L);
-        verify(phraseService).save(testUser, testFile);
-        verify(validator).validateId(1L);
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(validator).validateFile(testFile);  // This should validate MP4 format
+        verify(userService).getUser(userId);
+        verify(phraseService).getPhrase(phraseId);
+        verify(userPhraseService).getPhraseByUserIdAndPhraseId(userId, phraseId);
+        verify(userPhraseService).save(testUser, testPhrase, testFile);  // This should handle MP4 to WAV conversion
+    }
+
+    @Test
+    void uploadAndConvert_UserNotFound() {
+        // Arrange
+        when(userService.getUser(userId)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.uploadAndConvert(userId, phraseId, testFile);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
         verify(validator).validateFile(testFile);
+        verify(userService).getUser(userId);
+        verifyNoInteractions(userPhraseService);
     }
 
     @Test
-    public void whenUploadAndConvert_withNonExistingUser_thenReturnNotFound() {
-        // Given
-        when(userService.getUser(anyLong())).thenReturn(Optional.empty());
-        doNothing().when(validator).validateId(anyLong());
-        doNothing().when(validator).validateFile(any(MultipartFile.class));
+    void uploadAndConvert_PhraseNotFound() {
+        // Arrange
+        when(userService.getUser(userId)).thenReturn(Optional.of(testUser));
+        when(phraseService.getPhrase(phraseId)).thenReturn(Optional.empty());
 
-        // When
-        ResponseEntity<Phrase> response = audioController.uploadAndConvert(999L, testFile);
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.uploadAndConvert(userId, phraseId, testFile);
 
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNull();
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 
-        verify(userService).getUser(999L);
-        verify(phraseService, never()).save(any(User.class), any(MultipartFile.class));
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(validator).validateFile(testFile);
+        verify(userService).getUser(userId);
+        verify(phraseService).getPhrase(phraseId);
+        verifyNoMoreInteractions(userPhraseService);
     }
 
     @Test
-    public void whenUploadAndConvert_withServiceException_thenReturnInternalError() {
-        // Given
-        when(userService.getUser(anyLong())).thenReturn(Optional.of(testUser));
-        when(phraseService.save(any(User.class), any(MultipartFile.class)))
-                .thenThrow(new RuntimeException("Conversion failed"));
-        doNothing().when(validator).validateId(anyLong());
-        doNothing().when(validator).validateFile(any(MultipartFile.class));
-
-        // When
-        ResponseEntity<Phrase> response = audioController.uploadAndConvert(1L, testFile);
-
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody()).isNull();
-
-        verify(userService).getUser(1L);
-        verify(phraseService).save(testUser, testFile);
-    }
-
-    @Test
-    public void whenGetPhraseByUserIdAndPhraseId_withExistingIds_thenReturnPhrase() {
-        // Given
-        when(phraseService.getPhraseByUserIdAndPhraseId(anyLong(), anyLong()))
-                .thenReturn(Optional.of(testPhrase));
-        doNothing().when(validator).validateUserAndPhraseIds(anyLong(), anyLong());
-
-        // When
-        ResponseEntity<Phrase> response = audioController.getPhraseByUserIdAndPhraseId(1L, 1L);
-
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(1L);
-
-        verify(phraseService).getPhraseByUserIdAndPhraseId(1L, 1L);
-        verify(validator).validateUserAndPhraseIds(1L, 1L);
-    }
-
-    @Test
-    public void whenGetPhraseByUserIdAndPhraseId_withNonExistingIds_thenReturnNotFound() {
-        // Given
-        when(phraseService.getPhraseByUserIdAndPhraseId(anyLong(), anyLong()))
-                .thenReturn(Optional.empty());
-        doNothing().when(validator).validateUserAndPhraseIds(anyLong(), anyLong());
-
-        // When
-        // Act & Assert
-        PhraseNotFoundException exception = assertThrows(
-                PhraseNotFoundException.class,
-                () -> audioController.getPhraseByUserIdAndPhraseId(999L, 999L)
+    void uploadAndConvert_InvalidFileType() {
+        // Arrange
+        MultipartFile invalidFile = new MockMultipartFile(
+                "file",
+                "audio.wav",
+                "audio/wav",
+                "test audio content".getBytes()
         );
 
-        // Then
-        assertEquals("Phrase not found with id 999 for user 999", exception.getMessage());
-        verify(phraseService, times(1)).getPhraseByUserIdAndPhraseId(999L, 999L);
+        // Mock the validator to throw exception on invalid file type
+        doThrow(new UnsupportedMediaTypeStatusException("Only MP4 files are supported"))
+                .when(validator).validateFile(invalidFile);
+
+        // Act & Assert
+        assertThrows(UnsupportedMediaTypeStatusException.class, () ->
+                audioController.uploadAndConvert(userId, phraseId, invalidFile));
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(validator).validateFile(invalidFile);
+        verifyNoInteractions(userService);
+        verifyNoInteractions(phraseService);
+        verifyNoInteractions(userPhraseService);
+    }
+
+    @Test
+    void uploadAndConvert_UserPhraseAlreadyExists() {
+        // Arrange
+        when(userService.getUser(userId)).thenReturn(Optional.of(testUser));
+        when(phraseService.getPhrase(phraseId)).thenReturn(Optional.of(testPhrase));
+        when(userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId)).thenReturn(Optional.of(testUserPhrase));
+
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.uploadAndConvert(userId, phraseId, testFile);
+
+        // Assert
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(validator).validateFile(testFile);
+        verify(userService).getUser(userId);
+        verify(phraseService).getPhrase(phraseId);
+        verify(userPhraseService).getPhraseByUserIdAndPhraseId(userId, phraseId);
+        verify(userPhraseService, never()).save(any(), any(), any());
+    }
+
+    @Test
+    void uploadAndConvert_ServiceException() {
+        // Arrange
+        when(userService.getUser(userId)).thenReturn(Optional.of(testUser));
+        when(phraseService.getPhrase(phraseId)).thenReturn(Optional.of(testPhrase));
+        when(userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId)).thenReturn(Optional.empty());
+        when(userPhraseService.save(eq(testUser), eq(testPhrase), any(MultipartFile.class))).thenThrow(new RuntimeException("Service error"));
+
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.uploadAndConvert(userId, phraseId, testFile);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(validator).validateFile(testFile);
+        verify(userService).getUser(userId);
+        verify(phraseService).getPhrase(phraseId);
+        verify(userPhraseService).getPhraseByUserIdAndPhraseId(userId, phraseId);
+        verify(userPhraseService).save(testUser, testPhrase, testFile);
+    }
+
+    @Test
+    void getPhraseByUserIdAndPhraseId_Found() {
+        // Arrange
+        when(userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId)).thenReturn(Optional.of(testUserPhrase));
+
+        // Act
+        ResponseEntity<UserPhrase> response = audioController.getPhraseByUserIdAndPhraseId(userId, phraseId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testUserPhrase, response.getBody());
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(userPhraseService).getPhraseByUserIdAndPhraseId(userId, phraseId);
+    }
+
+    @Test
+    void getPhraseByUserIdAndPhraseId_NotFound() {
+        // Arrange
+        when(userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(PhraseNotFoundException.class, () ->
+                audioController.getPhraseByUserIdAndPhraseId(userId, phraseId));
+
+        // Verify
+        verify(validator).validateUserAndPhraseIds(userId, phraseId);
+        verify(userPhraseService).getPhraseByUserIdAndPhraseId(userId, phraseId);
     }
 }

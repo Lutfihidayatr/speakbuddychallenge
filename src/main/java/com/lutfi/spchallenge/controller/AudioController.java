@@ -2,8 +2,10 @@ package com.lutfi.spchallenge.controller;
 
 import com.lutfi.spchallenge.entity.Phrase;
 import com.lutfi.spchallenge.entity.User;
+import com.lutfi.spchallenge.entity.UserPhrase;
 import com.lutfi.spchallenge.exception.PhraseNotFoundException;
 import com.lutfi.spchallenge.service.PhraseService;
+import com.lutfi.spchallenge.service.UserPhraseService;
 import com.lutfi.spchallenge.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,24 +17,22 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/audio/user")
 public class AudioController {
+    private final UserPhraseService userPhraseService;
     private final PhraseService phraseService;
     private final RequestValidator validator;
     private final UserService userService;
 
     @Autowired
-    public AudioController(PhraseService phraseService, RequestValidator validator, UserService userService) {
+    public AudioController(UserPhraseService userPhraseService, PhraseService phraseService, RequestValidator validator, UserService userService) {
+        this.userPhraseService = userPhraseService;
         this.phraseService = phraseService;
         this.validator = validator;
         this.userService = userService;
     }
 
-    // not using {phrase_id} since this API purpose is to upload and convert audio
-    // the system for now doesn't recognize which or data related with phrase_id
-    // provided in this API, hence I assume should be not required phrase_id
-    // but the response itself should return phrase_id
-    @PostMapping(value = "/{userId}/phrase")
-    public ResponseEntity<Phrase> uploadAndConvert(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
-        validator.validateId(userId);
+    @PostMapping(value = "/{userId}/phrase/{phraseId}")
+    public ResponseEntity<UserPhrase> uploadAndConvert(@PathVariable Long userId, @PathVariable Long phraseId, @RequestParam("file") MultipartFile file) {
+        validator.validateUserAndPhraseIds(userId, phraseId);
         validator.validateFile(file);
 
         // make sure user id exist
@@ -41,20 +41,32 @@ public class AudioController {
             return ResponseEntity.notFound().build();
         }
 
-        Phrase phrase = new Phrase();
+        // make sure phrase exist
+        Optional<Phrase> phraseOpt = phraseService.getPhrase(phraseId);
+        if (phraseOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // make sure no phrase exist with user id
+        Optional<UserPhrase> userPhraseOpt = userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId);
+        if (userPhraseOpt.isPresent()) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+
+        UserPhrase userPhrase = new UserPhrase();
         try {
-            phrase = phraseService.save(user.get(), file);
+            userPhrase = userPhraseService.save(user.get(), phraseOpt.get(), file);
         } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().build();
         }
 
-        return ResponseEntity.ok(phrase);
+        return ResponseEntity.ok(userPhrase);
     }
 
     @GetMapping(value = "/{userId}/phrase/{phraseId}")
-    public ResponseEntity<Phrase> getPhraseByUserIdAndPhraseId(@PathVariable Long userId, @PathVariable Long phraseId) {
+    public ResponseEntity<UserPhrase> getPhraseByUserIdAndPhraseId(@PathVariable Long userId, @PathVariable Long phraseId) {
         validator.validateUserAndPhraseIds(userId, phraseId);
-        Optional<Phrase> phraseOpt = phraseService.getPhraseByUserIdAndPhraseId(userId, phraseId);
+        Optional<UserPhrase> phraseOpt = userPhraseService.getPhraseByUserIdAndPhraseId(userId, phraseId);
         return phraseOpt.map(ResponseEntity::ok)
                 .orElseThrow(() -> new PhraseNotFoundException(userId, phraseId));
     }

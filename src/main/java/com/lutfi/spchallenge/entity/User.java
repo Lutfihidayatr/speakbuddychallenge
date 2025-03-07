@@ -1,7 +1,6 @@
 package com.lutfi.spchallenge.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,7 +26,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnoreProperties("user")
-    private List<Phrase> phrases;
+    private List<UserPhrase> userPhrases;
 
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
